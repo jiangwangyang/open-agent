@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 
-from openagent.repository.database import ConversationEntity, MessageEntity, ExchangeEntity
+from openagent.repository.database import ConversationEntity, MessageEntity
 from openagent.repository.database import async_session
 
 
@@ -24,7 +24,6 @@ async def get_conversation(conversation_id: int) -> ConversationEntity | None:
         stmt = (
             select(ConversationEntity)
             .where(ConversationEntity.id == conversation_id)
-            .options(selectinload(ConversationEntity.exchanges))
             .options(selectinload(ConversationEntity.messages))
         )
         result = await session.execute(stmt)
@@ -54,20 +53,9 @@ async def save_conversation(conversation_id: int, title: str, work_dir: str, que
             session.add(conversation)
             await session.flush()
 
-        # 2. 新增 exchange
-        exchange = ExchangeEntity(
-            conversation_id=conversation.id,
-            query=query,
-            answer=answer,
-            time=current_time
-        )
-        session.add(exchange)
-        await session.flush()
-
-        # 3. 批量插入 messages
+        # 2. 批量插入 messages
         db_messages = [
             MessageEntity(
-                exchange_id=exchange.id,
                 conversation_id=conversation.id,
                 role=msg["role"],
                 content=json.dumps(msg["content"], ensure_ascii=False),
