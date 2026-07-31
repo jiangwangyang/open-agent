@@ -45,15 +45,36 @@ async def init_settings():
             "base_url": "https://api.moonshot.cn/anthropic",
             "api_key": os.getenv("MOONSHOT_API_KEY", ""),
             "models": [
+                "kimi-k3",
+                "kimi-k2.7-code",
+                "kimi-k2.6",
+                "kimi-k2.5",
+            ]
+        }
+    if "kimi" not in model_providers and os.getenv("KIMI_API_KEY", ""):
+        model_providers["kimi"] = {
+            "base_url": "https://api.kimi.com/coding",
+            "api_key": os.getenv("KIMI_API_KEY", ""),
+            "models": [
+                "kimi-k3",
                 "kimi-k2.7-code",
                 "kimi-k2.6",
                 "kimi-k2.5",
             ]
         }
     # 增加 MiniMax
+    if "minimaxi" not in model_providers and os.getenv("MINIMAXI_API_KEY", ""):
+        model_providers["minimaxi"] = {
+            "base_url": "https://api.minimaxi.com/anthropic",
+            "api_key": os.getenv("MINIMAXI_API_KEY", ""),
+            "models": [
+                "MiniMax-M3",
+                "MiniMax-M2.7",
+            ]
+        }
     if "minimax" not in model_providers and os.getenv("MINIMAX_API_KEY", ""):
         model_providers["minimax"] = {
-            "base_url": "https://api.minimax.chat/anthropic",
+            "base_url": "https://api.minimax.io/anthropic",
             "api_key": os.getenv("MINIMAX_API_KEY", ""),
             "models": [
                 "MiniMax-M3",
