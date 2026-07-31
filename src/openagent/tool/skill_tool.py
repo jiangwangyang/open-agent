@@ -1,6 +1,5 @@
 import json
 import pathlib
-import shlex
 from typing import TypedDict
 
 import anyio
@@ -54,8 +53,7 @@ async def init_skills():
 
 
 # 执行
-async def execute(command: str, work_dir: str) -> tuple[str, bool]:
-    args: list[str] = shlex.split(command)
+async def execute(args: list[str], work_dir: str) -> tuple[str, bool]:
     # 1. skill list
     if len(args) == 2 and args[0] == "skill" and args[1] == "list":
         tool_content = json.dumps([{"name": s["name"], "description": s["description"], "path": s["path"]} for s in SKILLS], ensure_ascii=False)
