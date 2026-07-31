@@ -1,8 +1,8 @@
 import sys
 
-from openagent.tool import command_tool
 from openagent.tool import file_tool
 from openagent.tool import mcp_tool
+from openagent.tool import shell_tool
 from openagent.tool import skill_tool
 
 DESCRIPTION = """
@@ -88,7 +88,7 @@ async def execute_tool(name: str, tool_input: dict, work_dir: str) -> tuple[str,
             if not tool_input.get("command"):
                 return "No command", True
             command: str = tool_input["command"]
-            return await command_tool.execute(command, work_dir)
+            return await shell_tool.execute(command, work_dir)
         # unknown
         return f"Unknown tool: {name}", True
     except Exception as e:
