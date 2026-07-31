@@ -19,7 +19,7 @@ async def agent(conversation_id: int, query: str, work_dir: str):
     messages = []
     if conversation_id:
         conversation = await conversation_repository.get_conversation(conversation_id)
-        messages += [msg for e in conversation.exchanges for msg in [{"id": e.id, "role": "user", "content": e.query}, {"id": e.id, "role": "assistant", "content": e.answer}]]
+        messages += [{"id": msg.id, "role": msg.role, "content": msg.content} for msg in conversation.messages]
     messages += [{"role": "user", "content": query}]
 
     # 初始化客户端
@@ -31,7 +31,7 @@ async def agent(conversation_id: int, query: str, work_dir: str):
 
     while True:
         # 1. 发送 anthropic 请求
-        response: AsyncStream[RawMessageStreamEvent] = await anthropic_client.messages.create(messages=messages, tools=tools, system=system_prompt, model=model, max_tokens=4096, stream=True)
+        response: AsyncStream[RawMessageStreamEvent] = await anthropic_client.messages.create(messages=messages, tools=tools, system=system_prompt, model=model, max_tokens=16000, stream=True)
         model_block_list = []
         async for event in response:
             if event.type == "content_block_start":
