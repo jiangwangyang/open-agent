@@ -8,7 +8,7 @@ from openagent.tool import skill_tool
 # 工具描述
 DESCRIPTION = f"""
 Execute a command on {sys.platform} system with {"powershell" if sys.platform.startswith("win") else "bash"}.
-The following are built-in system commands:
+The following are built-in system commands, and prioritize using the file command to read and write files:
 file read <file_path>                                           # Read file content.
 file write <file_path> <content>                                # Write content to a file. Creates the file if it doesn't exist, overwrites if it does.
 file edit <file_path> <old_str> <new_str>                       # Edit a file by replace all exact matches of old_str with new_str.
