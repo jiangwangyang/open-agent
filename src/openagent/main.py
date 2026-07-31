@@ -5,13 +5,13 @@ import uvicorn
 
 from openagent import application
 
-_config = uvicorn.Config(application.app, host="0.0.0.0", port=8080, log_level="INFO", workers=1, access_log=False)
+_config = uvicorn.Config(application.app, host="0.0.0.0", port=8000, log_level="INFO", workers=1, access_log=False)
 _server = uvicorn.Server(_config)
 
 
 def _open_browser():
     application.startup_event.wait()
-    webbrowser.open("http://localhost:8080")
+    webbrowser.open("http://localhost:8000")
 
 
 def main():
