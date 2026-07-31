@@ -4,6 +4,7 @@ import anyio
 
 
 async def execute(command: str, work_dir: str) -> tuple[str, bool]:
+    command = command.replace("\\", "/")
     args: list[str] = shlex.split(command)
     # 1. file read <file_path>
     if len(args) == 3 and args[0] == "file" and args[1] == "read":
