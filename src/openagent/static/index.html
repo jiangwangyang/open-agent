@@ -2402,13 +2402,11 @@
         // 恢复按钮
         setTyping(false);
         // 刷新数据
-        if (!currentConversationId) {
-            await loadConversationList();
-            startNewChat();
-        }
+        await loadConversationList();
         if (currentConversationId) {
-            await loadConversationList();
             await loadConversation(currentConversationId);
+        } else {
+            startNewChat();
         }
     }
 
@@ -2416,6 +2414,28 @@
         const message = messageInput.value.trim();
         if (!message || isTyping) {
             return;
+        }
+
+        // 新会话：先调用创建会话接口获取 conversation_id
+        if (!currentConversationId) {
+            try {
+                const response = await fetch('/conversation', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({title: message, work_dir: currentWorkdir})
+                });
+                if (!response.ok) {
+                    alert("CREATE CONVERSATION FAILED");
+                    return;
+                }
+                const conversation = await response.json();
+                currentConversationId = conversation.id;
+                conversationInfo.textContent = `ID: ${currentConversationId}`;
+                await loadConversationList()
+            } catch (e) {
+                alert("CREATE CONVERSATION FAILED");
+                return;
+            }
         }
 
         // 添加用户消息
@@ -2430,8 +2450,7 @@
         chatContainer.appendChild(currentWrapper);
 
         // 发送消息
-        let streamUrl = currentConversationId ? `/agent/stream/${currentConversationId}` : '/agent/stream';
-        streamUrl += `?query=${encodeURIComponent(message)}&work_dir=${encodeURIComponent(currentWorkdir)}`;
+        let streamUrl = `/agent/stream/${currentConversationId}?query=${encodeURIComponent(message)}`;
         currentEventSource = new EventSource(streamUrl);
 
         // 流式处理消息
@@ -2507,12 +2526,6 @@
             setTyping(false);
             // 刷新数据
             await loadConversationList();
-            if (!currentConversationId) {
-                const firstConversation = document.querySelector('.conversation-item');
-                if (firstConversation) {
-                    currentConversationId = firstConversation.dataset.id;
-                }
-            }
             if (currentConversationId) {
                 await loadConversation(currentConversationId);
             }

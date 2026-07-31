@@ -1,6 +1,6 @@
 import json
 
-from fastapi import APIRouter, Path, HTTPException
+from fastapi import APIRouter, Path, HTTPException, Body
 
 from openagent.repository import conversation_repository
 from openagent.repository.database import ConversationEntity
@@ -39,6 +39,19 @@ async def get_conversation(conversation_id: int = Path(...)):
             "content": json.loads(msg.content),
             "time": msg.time.strftime("%Y-%m-%d %H:%M:%S")
         } for msg in conversation.messages]
+    }
+
+
+# 创建会话
+@router.post("")
+async def create_conversation(title: str = Body(..., embed=True), work_dir: str = Body(..., embed=True)):
+    conversation: ConversationEntity = await conversation_repository.save_conversation(title, work_dir)
+    return {
+        "id": conversation.id,
+        "title": conversation.title,
+        "work_dir": conversation.work_dir,
+        "create_time": conversation.create_time.strftime("%Y-%m-%d %H:%M:%S"),
+        "updated_at": conversation.update_time.strftime("%Y-%m-%d %H:%M:%S"),
     }
 
 

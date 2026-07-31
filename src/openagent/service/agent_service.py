@@ -3,23 +3,25 @@ import json
 import anyio
 from anthropic import AsyncAnthropic, AsyncStream
 from anthropic.types.raw_message_stream_event import RawMessageStreamEvent
+from fastapi import HTTPException
 
 from openagent.repository import conversation_repository
 from openagent.repository import setting_repository
 from openagent.service import tool_service
 
 
-async def agent(conversation_id: int, query: str, work_dir: str):
+async def agent(conversation_id: int, query: str):
+    conversation = await conversation_repository.get_conversation(conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    work_dir = conversation.work_dir
     system_prompt = ""
     for agents_file in [anyio.Path(work_dir) / "AGENTS.md", await anyio.Path.home() / ".openagent" / "AGENTS.md", await anyio.Path.home() / ".agents" / "AGENTS.md"]:
         if await agents_file.exists() and await agents_file.is_file():
             system_prompt = await agents_file.read_text(encoding="utf-8")
             break
     tools = tool_service.get_anthropic_tools()
-    messages = []
-    if conversation_id:
-        conversation = await conversation_repository.get_conversation(conversation_id)
-        messages += [{"id": msg.id, "role": msg.role, "content": msg.content} for msg in conversation.messages]
+    messages = [{"id": msg.id, "role": msg.role, "content": msg.content} for msg in conversation.messages]
     messages += [{"role": "user", "content": query}]
 
     # 初始化客户端
@@ -62,8 +64,7 @@ async def agent(conversation_id: int, query: str, work_dir: str):
 
         # 2. 判断结束
         if not [block for block in model_block_list if block["type"] == "tool_use"]:
-            answer = model_block_list[-1].get("text", "") or model_block_list[-1].get("thinking", "")
-            await conversation_repository.save_conversation(conversation_id, query[:30], work_dir, query, answer, [msg for msg in messages if not "id" in msg])
+            await conversation_repository.save_conversation_messages(conversation_id, [msg for msg in messages if not "id" in msg])
             break
 
         # 3. 工具调用

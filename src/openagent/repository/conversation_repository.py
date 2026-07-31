@@ -33,25 +33,26 @@ async def get_conversation(conversation_id: int) -> ConversationEntity | None:
         return conversation
 
 
-async def save_conversation(conversation_id: int, title: str, work_dir: str, query: str, answer: str, messages: list):
+async def save_conversation(title: str, work_dir: str) -> ConversationEntity:
     current_time = datetime.now()
-
     async with async_session() as session:
-        # 1. 检查会话是否存在
-        conversation = await session.get(ConversationEntity, conversation_id) if conversation_id else None
-        if conversation:
-            # 如果会话存在，更新时间
-            conversation.update_time = current_time
-        else:
-            # 如果不存在，创建新会话
-            conversation = ConversationEntity(
-                title=title,
-                work_dir=work_dir,
-                create_time=current_time,
-                update_time=current_time
-            )
-            session.add(conversation)
-            await session.flush()
+        conversation = ConversationEntity(
+            title=title,
+            work_dir=work_dir,
+            create_time=current_time,
+            update_time=current_time
+        )
+        session.add(conversation)
+        await session.commit()
+        return conversation
+
+
+async def save_conversation_messages(conversation_id: int, messages: list):
+    current_time = datetime.now()
+    async with async_session() as session:
+        # 1. 更新会话时间
+        conversation = await session.get(ConversationEntity, conversation_id)
+        conversation.update_time = current_time
 
         # 2. 批量插入 messages
         db_messages = [
