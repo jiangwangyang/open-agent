@@ -43,7 +43,7 @@ async def _register_mcp_client(name: str, description: str, proto_type: str, arg
             # 获取工具列表
             list_tools_result: ListToolsResult = await session.list_tools()
             MCP_DICT[name] = McpServerInfo(description=description, session=session, tool_dict={tool.name: tool for tool in list_tools_result.tools})
-            logging.info(f"MCP client {name} started, having {len(list_tools_result.tools)} tools: {json.dumps([{"name": tool.name, "description": tool.description} for tool in list_tools_result.tools], ensure_ascii=False)}")
+            logging.info(f"MCP client {name} started, having {len(list_tools_result.tools)} tools")
             # 等待
             yield
             # 结束
