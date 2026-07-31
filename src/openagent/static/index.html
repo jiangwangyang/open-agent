@@ -2369,14 +2369,14 @@
         let htmlStr = '';
         contentArray.forEach(block => {
             if (block.type === 'thinking') {
-                htmlStr += `<details class="think-details" open><summary>${FOLD_SVG} Thought Process</summary><div class="content">${formatMarkdown(block.thinking)}</div></details>`;
+                htmlStr += `<details class="think-details"><summary>${FOLD_SVG} Thought Process</summary><div class="content">${formatMarkdown(block.thinking)}</div></details>`;
             } else if (block.type === 'text') {
                 htmlStr += `<div class="reply-content">${formatMarkdown(block.text)}</div>`;
             } else if (block.type === 'tool_use') {
-                htmlStr += `<details class="tool-details" open><summary>${FOLD_SVG} Call: ${escapeHtml(block.name)}</summary><div class="content"><code>${escapeHtml(JSON.stringify(block.input))}</code></div></details>`;
+                htmlStr += `<details class="tool-details"><summary>${FOLD_SVG} Call: ${escapeHtml(block.name)}</summary><div class="content"><code>${escapeHtml(JSON.stringify(block.input))}</code></div></details>`;
             } else if (block.type === 'tool_result') {
                 const status = block.is_error ? 'Error' : 'Result';
-                htmlStr += `<details class="tool-details" open><summary>${FOLD_SVG} Tool ${status}</summary><div class="content"><code>${escapeHtml(typeof block.content === 'string' ? block.content : JSON.stringify(block.content))}</code></div></details>`;
+                htmlStr += `<details class="tool-details"><summary>${FOLD_SVG} Tool ${status}</summary><div class="content"><code>${formatMarkdown(typeof block.content === 'string' ? block.content : JSON.stringify(block.content))}</code></div></details>`;
             }
         });
         htmlStr += `<div class="message-time">${time}</div>`;
@@ -2443,6 +2443,7 @@
         messageInput.value = '';
         autoResize();
         setTyping(true);
+        scrollToBottom()
 
         // 添加助手消息组
         const currentWrapper = document.createElement('div');
@@ -2465,6 +2466,11 @@
                 // 结束上一个消息
                 if (currentContentNode) {
                     currentContentNode.classList.remove('streaming-active');
+                    // 上一条内容结束后，将其折叠收起
+                    const prevDetails = currentContentNode.closest('details');
+                    if (prevDetails) {
+                        prevDetails.open = false;
+                    }
                 }
                 currentRawText = data.text || '';
 
@@ -2491,7 +2497,7 @@
                 } else if (data.type === 'tool_result') {
                     const details = document.createElement('details');
                     details.className = 'tool-details';
-                    details.open = true;
+                    details.open = false;
                     const status = data.is_error ? 'Error' : 'Result';
                     details.innerHTML = `<summary>${FOLD_SVG} Tool ${status} [${escapeHtml(String(data.id || ''))}]</summary><div class="content streaming-active"></div>`;
                     currentWrapper.appendChild(details);
