@@ -5,28 +5,57 @@ from openagent.tool import file_tool
 from openagent.tool import mcp_tool
 from openagent.tool import skill_tool
 
-# 工具描述
-DESCRIPTION = f"""
-Execute a command on {sys.platform} system with {"powershell" if sys.platform.startswith("win") else "bash"}.
-The following are built-in system commands, and prioritize using the file command to read and write files:
-file read <file_path>                                           # Read file content.
-file write <file_path> <content>                                # Write content to a file. Creates the file if it doesn't exist, overwrites if it does.
-file edit <file_path> <old_str> <new_str>                       # Edit a file by replace all exact matches of old_str with new_str.
-skill list                                                      # 列出所有可用技能
-mcp server list                                                 # 列出所有MCP服务
-mcp server <server_name> tool list                              # 列出指定MCP服务的所有工具
-mcp server <server_name> tool <tool_name> info                  # 查看指定MCP服务指定工具的参数格式信息
-mcp server <server_name> tool <tool_name> call <tool_json_args> # 调用指定MCP服务指定工具
+DESCRIPTION = """
+Execute a built-in command. Available commands:
+file read <path>                                                # Read file content from <path>.
+file write <path> <content>                                     # Write <content> to <path>. Creates the file if it doesn't exist, overwrites if it does.
+file edit <path> <old_str> <new_str>                            # Replace all exact matches of <old_str> with <new_str> in <path>.
+skill list                                                      # List all available skills.
+mcp server list                                                 # List all MCP servers.
+mcp server <server_name> tool list                              # List all tools of a specific MCP server.
+mcp server <server_name> tool <tool_name> info                  # Show parameter format of a specific tool.
+mcp server <server_name> tool <tool_name> call <tool_json_args> # Call a specific tool with JSON arguments.
 """
 COMMAND_TOOL = {
-    "name": "powershell" if sys.platform.startswith("win") else "bash",
+    "name": "command",
     "description": DESCRIPTION,
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "args": {
+                "type": "array",
+                "description": "Command and its arguments as an array. The first element is the command name, followed by the corresponding arguments. Example: [\"file\", \"read\", \"/path/to/file.txt\"]",
+                "items": {
+                    "type": "string"
+                }
+            }
+        },
+        "required": ["args"]
+    }
+}
+BASH_TOOL = {
+    "name": "bash",
+    "description": "Execute a command in Bash on Linux/macOS. Use ';' to run commands sequentially. Use '&&' to run the next command only if the previous succeeds.",
     "input_schema": {
         "type": "object",
         "properties": {
             "command": {
                 "type": "string",
-                "description": "PowerShell Command" if sys.platform.startswith("win") else "Bash Command",
+                "description": "Bash command to execute.",
+            }
+        },
+        "required": ["command"]
+    }
+}
+POWERSHELL_TOOL = {
+    "name": "powershell",
+    "description": "Execute a command in PowerShell on Windows. Use ';' to run commands sequentially. Use '&&' to run the next command only if the previous succeeds.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "command": {
+                "type": "string",
+                "description": "PowerShell command to execute.",
             }
         },
         "required": ["command"]
@@ -36,23 +65,31 @@ COMMAND_TOOL = {
 
 # 获取工具描述列表
 def get_anthropic_tools() -> list[dict]:
-    return [COMMAND_TOOL]
+    return [COMMAND_TOOL, POWERSHELL_TOOL if sys.platform.startswith("win") else BASH_TOOL]
 
 
 # 执行选择的工具
 async def execute_tool(name: str, tool_input: dict, work_dir: str) -> tuple[str, bool]:
     try:
-        if name != "powershell" and name != "bash":
-            return f"Unknown tool: {name}", True
-        if not tool_input.get("command"):
-            return "No command", True
-        command: str = tool_input["command"]
-        if command.startswith("file "):
-            return await file_tool.execute(command, work_dir)
-        if command.startswith("skill "):
-            return await skill_tool.execute(command, work_dir)
-        if command.startswith("mcp "):
-            return await mcp_tool.execute(command, work_dir)
-        return await command_tool.execute(command, work_dir)
+        # command
+        if name == "command":
+            if not tool_input.get("args"):
+                return "No args", True
+            args: list[str] = tool_input["args"]
+            if args[0] == "file":
+                return await file_tool.execute(args, work_dir)
+            if args[0] == "skill":
+                return await skill_tool.execute(args, work_dir)
+            if args[0] == "mcp":
+                return await mcp_tool.execute(args, work_dir)
+            return f"Unknown command: {args[0]}", True
+        # powershell bash
+        if name == "powershell" or name == "bash":
+            if not tool_input.get("command"):
+                return "No command", True
+            command: str = tool_input["command"]
+            return await command_tool.execute(command, work_dir)
+        # unknown
+        return f"Unknown tool: {name}", True
     except Exception as e:
         return f"{e}", True
