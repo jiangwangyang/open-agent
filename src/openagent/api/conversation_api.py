@@ -33,12 +33,6 @@ async def get_conversation(conversation_id: int = Path(...)):
         "work_dir": conversation.work_dir,
         "create_time": conversation.create_time.strftime("%Y-%m-%d %H:%M:%S"),
         "updated_at": conversation.update_time.strftime("%Y-%m-%d %H:%M:%S"),
-        "exchanges": [{
-            "id": e.id,
-            "query": e.query,
-            "answer": e.answer,
-            "time": e.time.strftime("%Y-%m-%d %H:%M:%S")
-        } for e in conversation.exchanges],
         "messages": [{
             "id": msg.id,
             "role": msg.role,
